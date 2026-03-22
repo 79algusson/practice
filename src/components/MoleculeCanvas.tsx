@@ -7,6 +7,7 @@ interface Props {
   width: number;
   height: number;
   containerScale?: number;
+  pressure?: number;
 }
 
 export default function MoleculeCanvas({
@@ -15,6 +16,7 @@ export default function MoleculeCanvas({
   width,
   height,
   containerScale = 1.0,
+  pressure = 1.0,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -92,7 +94,95 @@ export default function MoleculeCanvas({
       ctx.fill();
     }
 
-    // 6. State label
+    // 6. Pressure gauge (top-left corner)
+    {
+      const gx = 62, gy = 62, gr = 48;
+      // Outer ring
+      ctx.beginPath();
+      ctx.arc(gx, gy, gr, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0, 10, 25, 0.88)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(0, 200, 255, 0.45)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Arc track (270° sweep: from 135° to 405°)
+      const startAngle = Math.PI * 0.75;
+      const sweepAngle = Math.PI * 1.5;
+      ctx.beginPath();
+      ctx.arc(gx, gy, gr - 7, startAngle, startAngle + sweepAngle);
+      ctx.strokeStyle = 'rgba(0, 200, 255, 0.15)';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      // Colored arc (0 → current pressure)
+      const clampedP = Math.max(0, Math.min(2, pressure));
+      const fillAngle = startAngle + (clampedP / 2) * sweepAngle;
+      const gaugeColor = clampedP > 1.25 || clampedP < 0.75 ? '#ff3860' : clampedP > 1.1 || clampedP < 0.9 ? '#ffb347' : '#00ff9d';
+      ctx.beginPath();
+      ctx.arc(gx, gy, gr - 7, startAngle, fillAngle);
+      ctx.strokeStyle = gaugeColor;
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      // Tick marks
+      for (let i = 0; i <= 8; i++) {
+        const frac = i / 8;
+        const angle = startAngle + frac * sweepAngle;
+        const isMajor = i % 2 === 0;
+        const inner = gr - (isMajor ? 14 : 10);
+        const outer = gr - 2;
+        ctx.beginPath();
+        ctx.moveTo(gx + Math.cos(angle) * inner, gy + Math.sin(angle) * inner);
+        ctx.lineTo(gx + Math.cos(angle) * outer, gy + Math.sin(angle) * outer);
+        ctx.strokeStyle = isMajor ? 'rgba(0,200,255,0.7)' : 'rgba(0,200,255,0.3)';
+        ctx.lineWidth = isMajor ? 1.5 : 1;
+        ctx.stroke();
+      }
+
+      // 1 atm reference mark (green)
+      const refAngle = startAngle + 0.5 * sweepAngle;
+      ctx.beginPath();
+      ctx.moveTo(gx + Math.cos(refAngle) * (gr - 16), gy + Math.sin(refAngle) * (gr - 16));
+      ctx.lineTo(gx + Math.cos(refAngle) * (gr - 2), gy + Math.sin(refAngle) * (gr - 2));
+      ctx.strokeStyle = '#00ff9d';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Needle
+      const needleAngle = startAngle + (clampedP / 2) * sweepAngle;
+      ctx.save();
+      ctx.translate(gx, gy);
+      ctx.rotate(needleAngle);
+      ctx.beginPath();
+      ctx.moveTo(0, 3);
+      ctx.lineTo(gr - 14, 0);
+      ctx.lineTo(0, -3);
+      ctx.closePath();
+      ctx.fillStyle = gaugeColor;
+      ctx.shadowColor = gaugeColor;
+      ctx.shadowBlur = 6;
+      ctx.fill();
+      ctx.restore();
+
+      // Center cap
+      ctx.beginPath();
+      ctx.arc(gx, gy, 5, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff';
+      ctx.fill();
+
+      // Label
+      ctx.font = 'bold 7px "Space Mono", monospace';
+      ctx.fillStyle = 'rgba(0,200,255,0.7)';
+      ctx.textAlign = 'center';
+      ctx.fillText('PRESSURE', gx, gy + gr - 12);
+
+      ctx.font = 'bold 10px "Space Mono", monospace';
+      ctx.fillStyle = gaugeColor;
+      ctx.fillText(clampedP.toFixed(2) + ' atm', gx, gy + 16);
+    }
+
+    // 7. State label
     const stateLabel: Record<MatterState, string> = {
       solid: 'SOLID',
       liquid: 'LIQUID',
@@ -103,7 +193,7 @@ export default function MoleculeCanvas({
     ctx.fillStyle = 'rgba(0,200,255,0.6)';
     ctx.textAlign = 'right';
     ctx.fillText(stateLabel[state], width - 10, height - 10);
-  }, [molecules, state, width, height, containerScale]);
+  }, [molecules, state, width, height, containerScale, pressure]);
 
   return (
     <canvas
