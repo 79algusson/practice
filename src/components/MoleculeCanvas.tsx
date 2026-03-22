@@ -44,8 +44,12 @@ export default function MoleculeCanvas({
 
     ctx.clearRect(0, 0, width, height);
 
+    // 0. Solid dark background (ensures visibility regardless of CSS)
+    ctx.fillStyle = '#020d1a';
+    ctx.fillRect(0, 0, width, height);
+
     // 1. Background grid
-    ctx.strokeStyle = 'rgba(0,200,255,0.04)';
+    ctx.strokeStyle = 'rgba(0,200,255,0.06)';
     ctx.lineWidth = 1;
     for (let x = 0; x < width; x += 24) {
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
@@ -62,20 +66,27 @@ export default function MoleculeCanvas({
 
       // Balloon fill
       const fillGrad = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.3, 0, cx, cy, r);
-      fillGrad.addColorStop(0, 'rgba(0, 255, 157, 0.13)');
-      fillGrad.addColorStop(0.65, 'rgba(0, 255, 157, 0.06)');
-      fillGrad.addColorStop(1, 'rgba(0, 255, 157, 0.01)');
+      fillGrad.addColorStop(0, 'rgba(0, 255, 157, 0.22)');
+      fillGrad.addColorStop(0.65, 'rgba(0, 255, 157, 0.10)');
+      fillGrad.addColorStop(1, 'rgba(0, 255, 157, 0.03)');
       ctx.beginPath();
       ctx.arc(cx, cy, r, 0, Math.PI * 2);
       ctx.fillStyle = fillGrad;
       ctx.fill();
 
-      // Balloon border glow
+      // Balloon border (solid stroke first for visibility)
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(0, 255, 157, 0.55)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Balloon border glow on top
       ctx.save();
       ctx.shadowColor = '#00ff9d';
-      ctx.shadowBlur = 14;
-      ctx.strokeStyle = 'rgba(0, 255, 157, 0.75)';
-      ctx.lineWidth = 2.5;
+      ctx.shadowBlur = 18;
+      ctx.strokeStyle = '#00ff9d';
+      ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.arc(cx, cy, r, 0, Math.PI * 2);
       ctx.stroke();
