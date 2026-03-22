@@ -154,7 +154,7 @@
   width: 100%;
   border-collapse: collapse;
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.65rem;
 }
 
 .dataTable th {

@@ -121,3 +121,79 @@ export function calculateCharlesVolume(
 ): number {
   return initialVolume * newTempK / initialTempK;
 }
+
+export function createMoleculesInCircle(
+  count: number,
+  cx: number,
+  cy: number,
+  radius: number,
+  color: string,
+): Molecule[] {
+  return Array.from({ length: count }, (_, i) => {
+    const angle = Math.random() * Math.PI * 2;
+    const r = (radius - 20) * Math.sqrt(Math.random());
+    const speed = 2.5 * (0.7 + Math.random() * 0.6);
+    const vAngle = Math.random() * Math.PI * 2;
+    return {
+      id: i,
+      x: cx + Math.cos(angle) * r,
+      y: cy + Math.sin(angle) * r,
+      vx: Math.cos(vAngle) * speed,
+      vy: Math.sin(vAngle) * speed,
+      radius: 7 + Math.random() * 2,
+      color,
+      trail: [],
+    };
+  });
+}
+
+export function updateMoleculesInBalloon(
+  molecules: Molecule[],
+  cx: number,
+  cy: number,
+  radius: number,
+  targetSpeed: number,
+): { molecules: Molecule[]; wallCollisions: number; collisionPoints: { x: number; y: number }[] } {
+  let wallCollisions = 0;
+  const collisionPoints: { x: number; y: number }[] = [];
+
+  const updated = molecules.map((mol) => {
+    let { x, y, vx, vy, trail } = mol;
+
+    const currentSpeed = Math.sqrt(vx * vx + vy * vy);
+    if (currentSpeed > 0) {
+      const factor = 1 + (targetSpeed - currentSpeed) / currentSpeed * 0.05;
+      vx *= factor;
+      vy *= factor;
+    } else {
+      const angle = Math.random() * Math.PI * 2;
+      vx = Math.cos(angle) * targetSpeed;
+      vy = Math.sin(angle) * targetSpeed;
+    }
+
+    x += vx;
+    y += vy;
+
+    const dx = x - cx;
+    const dy = y - cy;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const limit = radius - mol.radius;
+
+    if (dist >= limit && dist > 0) {
+      wallCollisions++;
+      const nx = dx / dist;
+      const ny = dy / dist;
+      collisionPoints.push({ x: cx + nx * radius, y: cy + ny * radius });
+      const dot = vx * nx + vy * ny;
+      vx -= 2 * dot * nx;
+      vy -= 2 * dot * ny;
+      x = cx + nx * (limit - 0.5);
+      y = cy + ny * (limit - 0.5);
+    }
+
+    trail = [{ x, y }, ...trail.slice(0, 5)];
+    return { ...mol, x, y, vx, vy, trail };
+  });
+
+  return { molecules: updated, wallCollisions, collisionPoints };
+}
