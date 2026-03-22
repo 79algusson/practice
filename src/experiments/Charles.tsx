@@ -29,6 +29,9 @@ export default function CharlesExperiment({ onRequestApiKey }: Props) {
     createMolecules(MOLECULE_COUNT, CANVAS_W, CANVAS_H, 'gas', MOLECULE_COLOR),
   );
   const rafRef = useRef<number | null>(null);
+  const moleculesRef = useRef<Molecule[]>(molecules);
+  const impulseHistoryRef = useRef<number[]>([]);
+  const [instantPressure, setInstantPressure] = useState(1.0);
 
   const tempC = tempK - 273;
   const volume = calculateCharlesVolume(INITIAL_VOLUME, INITIAL_TEMP_K, tempK);
@@ -39,13 +42,28 @@ export default function CharlesExperiment({ onRequestApiKey }: Props) {
   const targetSpeed = getSpeedForTemp(tempC);
 
   const animate = useCallback(() => {
-    setMolecules((prev) =>
-      updateMolecules(prev, CANVAS_W, CANVAS_H, 'gas', targetSpeed),
+    const { molecules: next, wallImpulse } = updateMolecules(
+      moleculesRef.current, CANVAS_W, CANVAS_H, 'gas', targetSpeed,
     );
+    moleculesRef.current = next;
+    setMolecules(next);
+
+    const hist = impulseHistoryRef.current;
+    hist.push(wallImpulse);
+    if (hist.length > 60) hist.shift();
+
+    if (hist.length >= 10) {
+      const longAvg = hist.reduce((a, b) => a + b, 0) / hist.length;
+      const shortAvg = hist.slice(-6).reduce((a, b) => a + b, 0) / 6;
+      if (longAvg > 0) setInstantPressure(shortAvg / longAvg);
+    }
+
     rafRef.current = requestAnimationFrame(animate);
   }, [targetSpeed]);
 
   useEffect(() => {
+    impulseHistoryRef.current = [];
+    setInstantPressure(1.0);
     rafRef.current = requestAnimationFrame(animate);
     return () => {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
@@ -204,6 +222,7 @@ export default function CharlesExperiment({ onRequestApiKey }: Props) {
             width={CANVAS_W}
             height={CANVAS_H}
             containerScale={containerScale}
+            pressure={instantPressure}
           />
         </div>
 

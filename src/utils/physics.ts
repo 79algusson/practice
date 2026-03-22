@@ -65,8 +65,10 @@ export function updateMolecules(
   height: number,
   state: MatterState,
   targetSpeed: number,
-): Molecule[] {
-  return molecules.map((mol) => {
+): { molecules: Molecule[]; wallImpulse: number } {
+  let wallImpulse = 0;
+
+  const updated = molecules.map((mol) => {
     let { x, y, vx, vy, trail } = mol;
 
     const currentSpeed = Math.sqrt(vx * vx + vy * vy);
@@ -91,10 +93,10 @@ export function updateMolecules(
     x += vx;
     y += vy;
 
-    if (x - mol.radius < 0) { x = mol.radius; vx = Math.abs(vx); }
-    if (x + mol.radius > width) { x = width - mol.radius; vx = -Math.abs(vx); }
-    if (y - mol.radius < 0) { y = mol.radius; vy = Math.abs(vy); }
-    if (y + mol.radius > height) { y = height - mol.radius; vy = -Math.abs(vy); }
+    if (x - mol.radius < 0) { x = mol.radius; wallImpulse += 2 * Math.abs(vx); vx = Math.abs(vx); }
+    if (x + mol.radius > width) { x = width - mol.radius; wallImpulse += 2 * Math.abs(vx); vx = -Math.abs(vx); }
+    if (y - mol.radius < 0) { y = mol.radius; wallImpulse += 2 * Math.abs(vy); vy = Math.abs(vy); }
+    if (y + mol.radius > height) { y = height - mol.radius; wallImpulse += 2 * Math.abs(vy); vy = -Math.abs(vy); }
 
     if (state === 'gas' || state === 'plasma') {
       trail = [{ x, y }, ...trail.slice(0, 5)];
@@ -104,6 +106,8 @@ export function updateMolecules(
 
     return { ...mol, x, y, vx, vy, trail };
   });
+
+  return { molecules: updated, wallImpulse };
 }
 
 export function getSpeedForTemp(tempC: number): number {
