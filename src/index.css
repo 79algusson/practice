@@ -1,0 +1,58 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap');
+
+:root {
+  --bg-deep: #020b18;
+  --bg-card: #041428;
+  --bg-panel: #061d35;
+  --border: rgba(0, 200, 255, 0.18);
+  --border-bright: rgba(0, 200, 255, 0.5);
+  --accent-cyan: #00c8ff;
+  --accent-green: #00ff9d;
+  --accent-orange: #ff7b00;
+  --accent-purple: #b347ff;
+  --accent-red: #ff3860;
+  --text-primary: #e2f4ff;
+  --text-secondary: #7ab8d4;
+  --text-dim: #3a6a88;
+  --font-display: 'Orbitron', monospace;
+  --font-body: 'Noto Sans KR', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4 {
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+}

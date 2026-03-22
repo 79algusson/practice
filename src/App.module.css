@@ -1,0 +1,134 @@
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(2, 11, 24, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--accent-cyan);
+}
+
+.logoIcon {
+  color: var(--accent-cyan);
+}
+
+.apiBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.9rem;
+  background: rgba(0, 200, 255, 0.08);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.apiBtn:hover {
+  background: rgba(0, 200, 255, 0.15);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+.apiBtnActive {
+  color: var(--accent-green);
+  border-color: rgba(0, 255, 157, 0.4);
+  background: rgba(0, 255, 157, 0.08);
+}
+
+.banner {
+  background: linear-gradient(135deg, var(--bg-card) 0%, rgba(6, 29, 53, 0.8) 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 1.5rem 1.5rem 1.25rem;
+}
+
+.bannerInner {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.bannerIcon {
+  color: var(--accent-cyan);
+  flex-shrink: 0;
+}
+
+.bannerText {
+  flex: 1;
+  min-width: 0;
+}
+
+.bannerTitle {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  color: var(--text-primary);
+  margin: 0 0 0.25rem;
+}
+
+.bannerDesc {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.bannerBadge {
+  padding: 0.35rem 0.9rem;
+  background: rgba(179, 71, 255, 0.15);
+  border: 1px solid rgba(179, 71, 255, 0.35);
+  border-radius: 20px;
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  color: var(--accent-purple);
+  white-space: nowrap;
+}
+
+.main {
+  flex: 1;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 1rem 1.5rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+}
+
+.footerLink {
+  color: var(--accent-purple);
+  text-decoration: none;
+}
+
+.footerLink:hover {
+  text-decoration: underline;
+}
