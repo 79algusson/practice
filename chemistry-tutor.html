@@ -488,27 +488,12 @@
 </head>
 <body>
 
-<!-- ═══════════ API KEY SCREEN ═══════════ -->
-<div id="api-screen">
-  <div class="api-card">
-    <div class="logo">🔬</div>
-    <h1>일반화학샘</h1>
-    <p>AI 화학 튜터에 오신 걸 환영해요!<br>시작하려면 Gemini API 키를 입력하세요.</p>
-    <input type="password" id="api-input" placeholder="AIzaSy..." autocomplete="off" />
-    <button class="btn-primary" onclick="startApp()">시작하기 →</button>
-    <p class="api-hint">
-      API 키는 브라우저 메모리에만 저장되며 외부로 전송되지 않습니다.<br>
-      <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio에서 무료로 발급받기</a>
-    </p>
-  </div>
-</div>
-
 <!-- ═══════════ MAIN APP ═══════════ -->
-<div id="app">
+<div id="app" style="display:flex">
   <header>
     <div class="header-inner">
       <div class="header-logo">일반화학샘 <span>🔬</span></div>
-      <button class="api-reset" onclick="resetApp()">API 키 변경</button>
+      <button class="api-reset" onclick="showApiModal()">🔑 API 키 설정</button>
     </div>
   </header>
 
@@ -807,6 +792,19 @@
       <h2 class="section-title" style="margin-bottom:4px">💬 AI 일반화학샘</h2>
       <p class="section-sub">화학에 관해 무엇이든 물어보세요!</p>
 
+      <!-- API key inline banner (shown when no key) -->
+      <div id="api-banner" style="background:var(--blue-light);border:1.5px solid var(--blue-mid);border-radius:16px;padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <span style="font-size:22px">🔑</span>
+        <div style="flex:1;min-width:180px">
+          <div style="font-weight:700;color:var(--blue);margin-bottom:2px">Gemini API 키가 필요해요</div>
+          <div style="font-size:13px;color:var(--gray-600)">채팅을 사용하려면 API 키를 입력하세요. <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--blue)">무료 발급 →</a></div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="password" id="banner-key-input" placeholder="AIzaSy..." style="padding:9px 12px;border:2px solid var(--blue-mid);border-radius:10px;font-size:14px;outline:none;width:200px;" />
+          <button onclick="saveBannerKey()" style="padding:9px 16px;background:var(--blue);color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">저장</button>
+        </div>
+      </div>
+
       <div class="chat-quick-btns">
         <button class="quick-btn" onclick="sendQuick('이온 결합과 공유 결합의 차이점을 쉽게 설명해줘')">이온 vs 공유 결합</button>
         <button class="quick-btn" onclick="sendQuick('산화환원 반응을 쉬운 예시로 알려줘')">산화환원 반응</button>
@@ -860,6 +858,26 @@
   // ═══════════ STATE ═══════════
   let apiKey = '';
   let chatHistory = [];
+
+  function saveBannerKey() {
+    const val = document.getElementById('banner-key-input').value.trim();
+    if (!val) return;
+    apiKey = val;
+    document.getElementById('api-banner').style.display = 'none';
+  }
+
+  function showApiModal() {
+    const key = prompt('Gemini API 키를 입력하세요 (기존 키를 변경할 수 있어요):');
+    if (key && key.trim()) {
+      apiKey = key.trim();
+      document.getElementById('api-banner').style.display = 'none';
+    }
+  }
+
+  function updateBannerVisibility() {
+    const banner = document.getElementById('api-banner');
+    if (banner) banner.style.display = apiKey ? 'none' : 'flex';
+  }
   let currentQ = 0;
   let score = 0;
   let answered = false;
@@ -939,32 +957,14 @@
   ];
 
   // ═══════════ APP CONTROL ═══════════
-  function startApp() {
-    apiKey = document.getElementById('api-input').value.trim();
-    if (!apiKey) { alert('API 키를 입력해주세요.'); return; }
-    document.getElementById('api-screen').style.display = 'none';
-    document.getElementById('app').style.display = 'flex';
-    startQuiz();
-  }
-
-  function resetApp() {
-    apiKey = '';
-    document.getElementById('api-input').value = '';
-    document.getElementById('api-screen').style.display = 'flex';
-    document.getElementById('app').style.display = 'none';
-  }
 
   function showSection(name, btn) {
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
     document.getElementById('section-' + name).classList.add('active');
     btn.classList.add('active');
+    if (name === 'chat') updateBannerVisibility();
   }
-
-  // Enter key on api-input
-  document.getElementById('api-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') startApp();
-  });
 
   // ═══════════ QUIZ ═══════════
   function startQuiz() {
@@ -1108,6 +1108,11 @@
     const input = document.getElementById('chat-input');
     const text = input.value.trim();
     if (!text) return;
+    if (!apiKey) {
+      document.getElementById('api-banner').style.display = 'flex';
+      document.getElementById('banner-key-input').focus();
+      return;
+    }
 
     input.value = '';
     input.style.height = 'auto';
@@ -1179,6 +1184,8 @@
 
   // ═══════════ INIT ═══════════
   startQuiz();
+  // banner hidden by default (chat tab not shown yet)
+  document.getElementById('api-banner').style.display = 'none';
 </script>
 </body>
 </html>
