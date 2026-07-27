@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>일반화학샘 🔬 AI 화학 튜터</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue: #2563EB;
+      --blue-light: #EFF6FF;
+      --blue-mid: #BFDBFE;
+      --teal: #0D9488;
+      --teal-light: #CCFBF1;
+      --white: #FFFFFF;
+      --gray-50: #F8FAFC;
+      --gray-100: #F1F5F9;
+      --gray-200: #E2E8F0;
+      --gray-400: #94A3B8;
+      --gray-600: #475569;
+      --gray-800: #1E293B;
+      --green: #16A34A;
+      --red: #DC2626;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
+      background: var(--blue-light);
+      color: var(--gray-800);
+      min-height: 100vh;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    /* ─── API Key Screen ─── */
+    #api-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .api-card {
+      background: var(--white);
+      border-radius: 24px;
+      padding: 48px 40px;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(37,99,235,0.12);
+      text-align: center;
+    }
+    .api-card .logo { font-size: 56px; margin-bottom: 16px; }
+    .api-card h1 { font-size: 28px; font-weight: 800; color: var(--blue); margin-bottom: 8px; }
+    .api-card p { color: var(--gray-600); font-size: 15px; margin-bottom: 32px; }
+    .api-card input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid var(--gray-200);
+      border-radius: 12px;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s;
+      margin-bottom: 12px;
+    }
+    .api-card input:focus { border-color: var(--blue); }
+    .btn-primary {
+      width: 100%;
+      padding: 15px;
+      background: var(--blue);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn-primary:hover { background: #1D4ED8; }
+    .btn-primary:active { transform: scale(0.98); }
+    .api-hint { margin-top: 16px; font-size: 13px; color: var(--gray-400); }
+    .api-hint a { color: var(--blue); text-decoration: none; }
+
+    /* ─── Main App ─── */
+    #app { display: none; flex-direction: column; min-height: 100vh; }
+
+    /* ─── Header ─── */
+    header {
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-200);
+      padding: 0 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .header-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+    }
+    .header-logo { font-size: 22px; font-weight: 800; color: var(--blue); }
+    .header-logo span { color: var(--teal); }
+    .api-reset {
+      font-size: 13px;
+      color: var(--gray-400);
+      cursor: pointer;
+      border: none;
+      background: none;
+      padding: 6px 10px;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+    .api-reset:hover { background: var(--gray-100); color: var(--gray-600); }
+
+    /* ─── Nav Tabs ─── */
+    nav {
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-200);
+      position: sticky;
+      top: 60px;
+      z-index: 99;
+    }
+    .nav-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+    }
+    .nav-tab {
+      flex: 1;
+      padding: 14px 8px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--gray-400);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+      border: none;
+      background: none;
+    }
+    .nav-tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+    .nav-tab:hover:not(.active) { color: var(--gray-600); background: var(--gray-50); }
+
+    /* ─── Content ─── */
+    main { flex: 1; max-width: 900px; margin: 0 auto; width: 100%; padding: 24px 16px; }
+
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* ─── Concept Cards ─── */
+    .section-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--gray-800);
+      margin-bottom: 8px;
+    }
+    .section-sub { color: var(--gray-600); margin-bottom: 24px; font-size: 15px; }
+
+    .category-label {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--teal);
+      margin: 28px 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .category-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--teal-light);
+    }
+
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+
+    .concept-card {
+      background: var(--white);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      transition: transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+    }
+    .concept-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(37,99,235,0.15); }
+
+    .card-svg-wrap {
+      background: linear-gradient(135deg, var(--blue-light), var(--teal-light));
+      padding: 20px;
+      text-align: center;
+    }
+    .card-svg-wrap svg { width: 100%; max-height: 200px; }
+
+    .card-body { padding: 20px; }
+    .card-title { font-size: 20px; font-weight: 800; color: var(--gray-800); margin-bottom: 4px; }
+    .card-iupac-en { font-size: 13px; font-weight: 600; color: var(--blue); font-style: italic; margin-bottom: 4px; }
+    .card-iupac-ko { font-size: 13px; color: var(--teal); margin-bottom: 12px; }
+    .card-desc { font-size: 15px; color: var(--gray-600); line-height: 1.7; }
+
+    /* ─── Quiz ─── */
+    .quiz-header {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    }
+    .quiz-progress-bar {
+      width: 100%;
+      height: 8px;
+      background: var(--gray-200);
+      border-radius: 99px;
+      margin-top: 16px;
+      overflow: hidden;
+    }
+    .quiz-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--blue), var(--teal));
+      border-radius: 99px;
+      transition: width 0.4s ease;
+    }
+    .quiz-score { font-size: 15px; color: var(--gray-600); margin-top: 8px; }
+
+    .question-card {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    }
+    .q-num {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--blue);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .q-badge {
+      background: var(--blue-light);
+      padding: 2px 10px;
+      border-radius: 99px;
+    }
+    .q-text { font-size: 18px; font-weight: 700; color: var(--gray-800); margin-bottom: 24px; line-height: 1.5; }
+
+    .choices { display: flex; flex-direction: column; gap: 12px; }
+    .choice-btn {
+      padding: 15px 20px;
+      border: 2px solid var(--gray-200);
+      border-radius: 12px;
+      background: var(--white);
+      font-size: 16px;
+      color: var(--gray-800);
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+    .choice-btn:hover:not(:disabled) { border-color: var(--blue); background: var(--blue-light); }
+    .choice-btn.correct { border-color: var(--green); background: #F0FDF4; color: var(--green); }
+    .choice-btn.wrong { border-color: var(--red); background: #FEF2F2; color: var(--red); }
+    .choice-btn:disabled { cursor: default; }
+
+    .feedback-box {
+      margin-top: 20px;
+      padding: 16px 20px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      display: none;
+    }
+    .feedback-box.show { display: block; }
+    .feedback-box.ok { background: #F0FDF4; color: var(--green); }
+    .feedback-box.no { background: #FEF2F2; color: var(--red); }
+
+    .btn-next {
+      margin-top: 20px;
+      padding: 14px 32px;
+      background: var(--blue);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      display: none;
+      transition: background 0.2s;
+    }
+    .btn-next.show { display: inline-block; }
+    .btn-next:hover { background: #1D4ED8; }
+
+    .quiz-result {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 40px;
+      text-align: center;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      display: none;
+    }
+    .quiz-result.show { display: block; }
+    .result-emoji { font-size: 64px; margin-bottom: 16px; }
+    .result-score { font-size: 48px; font-weight: 900; color: var(--blue); }
+    .result-msg { font-size: 18px; color: var(--gray-600); margin: 12px 0 28px; }
+    .btn-retry {
+      padding: 14px 32px;
+      background: var(--teal);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-retry:hover { background: #0F766E; }
+
+    /* ─── Chat ─── */
+    .chat-wrap { display: flex; flex-direction: column; height: calc(100vh - 180px); min-height: 500px; }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .msg { display: flex; align-items: flex-end; gap: 10px; }
+    .msg.user { flex-direction: row-reverse; }
+
+    .msg-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      background: linear-gradient(135deg, var(--blue), var(--teal));
+      color: white;
+      font-weight: 700;
+    }
+    .msg.user .msg-avatar { background: linear-gradient(135deg, var(--blue), #6366F1); }
+
+    .msg-bubble {
+      max-width: 75%;
+      padding: 14px 18px;
+      border-radius: 20px;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+    .msg.ai .msg-bubble {
+      background: var(--white);
+      color: var(--gray-800);
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .msg.user .msg-bubble {
+      background: var(--blue);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+
+    .msg-time { font-size: 11px; color: var(--gray-400); margin-top: 4px; }
+    .msg.user .msg-time { text-align: right; }
+
+    .typing-indicator {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 4px 0;
+    }
+    .typing-indicator.show { display: flex; }
+    .typing-bubble {
+      background: var(--white);
+      padding: 14px 18px;
+      border-radius: 20px;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      font-size: 14px;
+      color: var(--gray-600);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .dots { display: flex; gap: 4px; }
+    .dots span {
+      width: 8px; height: 8px;
+      background: var(--blue);
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+    .dots span:nth-child(2) { animation-delay: 0.2s; }
+    .dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+      40% { transform: translateY(-8px); opacity: 1; }
+    }
+
+    .chat-input-area {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 16px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+    }
+    .chat-textarea {
+      flex: 1;
+      resize: none;
+      border: none;
+      outline: none;
+      font-size: 15px;
+      font-family: inherit;
+      line-height: 1.5;
+      max-height: 120px;
+      overflow-y: auto;
+      color: var(--gray-800);
+      background: transparent;
+    }
+    .chat-textarea::placeholder { color: var(--gray-400); }
+    .btn-send {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--blue);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+    .btn-send:hover { background: #1D4ED8; }
+    .btn-send:disabled { background: var(--gray-200); cursor: default; }
+    .btn-send svg { width: 20px; height: 20px; fill: white; }
+
+    .error-msg {
+      background: #FEF2F2;
+      color: var(--red);
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      margin-top: 8px;
+      display: none;
+    }
+    .error-msg.show { display: block; }
+
+    .chat-quick-btns {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .quick-btn {
+      padding: 8px 14px;
+      background: var(--blue-light);
+      color: var(--blue);
+      border: 1px solid var(--blue-mid);
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .quick-btn:hover { background: var(--blue); color: white; }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 600px) {
+      .api-card { padding: 32px 24px; }
+      .cards-grid { grid-template-columns: 1fr; }
+      .chat-wrap { height: calc(100vh - 200px); }
+      .msg-bubble { max-width: 88%; }
+      .section-title { font-size: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════ MAIN APP ═══════════ -->
+<div id="app" style="display:flex">
+  <header>
+    <div class="header-inner">
+      <div class="header-logo">일반화학샘 <span>🔬</span></div>
+      <button class="api-reset" onclick="showApiModal()">🔑 API 키 설정</button>
+    </div>
+  </header>
+
+  <nav>
+    <div class="nav-inner">
+      <button class="nav-tab active" onclick="showSection('concepts',this)">📚 개념 카드</button>
+      <button class="nav-tab" onclick="showSection('quiz',this)">✏️ 퀴즈</button>
+      <button class="nav-tab" onclick="showSection('chat',this)">💬 AI 채팅</button>
+    </div>
+  </nav>
+
+  <main>
+
+    <!-- ─── CONCEPTS ─── -->
+    <div id="section-concepts" class="section active">
+      <h2 class="section-title">핵심 개념 카드</h2>
+      <p class="section-sub">카드를 눌러 자세한 내용을 확인하세요.</p>
+
+      <div class="category-label">⚗️ 화학 결합 (Chemical Bonding)</div>
+      <div class="cards-grid">
+
+        <!-- Card 1: 이온 결합 -->
+        <div class="concept-card">
+          <div class="card-svg-wrap">
+            <svg viewBox="0 0 300 180" xmlns="http://www.w3.org/2000/svg">
+              <!-- Na+ -->
+              <circle cx="90" cy="90" r="40" fill="#BFDBFE" stroke="#2563EB" stroke-width="2.5"/>
+              <text x="90" y="82" text-anchor="middle" font-size="22" font-weight="bold" fill="#1D4ED8">Na</text>
+              <text x="90" y="105" text-anchor="middle" font-size="14" fill="#1D4ED8">+</text>
+              <!-- Cl- -->
+              <circle cx="210" cy="90" r="48" fill="#CCFBF1" stroke="#0D9488" stroke-width="2.5"/>
+              <text x="210" y="82" text-anchor="middle" font-size="22" font-weight="bold" fill="#0F766E">Cl</text>
+              <text x="210" y="105" text-anchor="middle" font-size="14" fill="#0F766E">−</text>
+              <!-- Arrow -->
+              <line x1="135" y1="90" x2="157" y2="90" stroke="#6B7280" stroke-width="2" marker-end="url(#arr)"/>
+              <defs>
+                <marker id="arr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L0,6 L6,3 z" fill="#6B7280"/>
+                </marker>
+              </defs>
+              <!-- e- transfer label -->
+              <text x="146" y="78" text-anchor="middle" font-size="11" fill="#6B7280">e⁻</text>
+              <!-- NaCl label -->
+              <text x="150" y="155" text-anchor="middle" font-size="14" font-weight="bold" fill="#374151">NaCl (소금)</text>
+              <!-- Force lines -->
+              <line x1="133" y1="90" x2="158" y2="90" stroke="#2563EB" stroke-width="1" stroke-dasharray="3,2"/>
+            </svg>
+          </div>
+          <div class="card-body">
+            <div class="card-title">이온 결합</div>
+            <div class="card-iupac-en">Ionic Bond</div>
+            <div class="card-iupac-ko">IUPAC: "금속과 비금속 간 전자 이동으로 형성된 정전기적 인력에 의한 결합"</div>
+            <div class="card-desc">양이온(금속)과 음이온(비금속)이 전자를 주고받아 생기는 결합이에요. NaCl처럼 나트륨이 전자 1개를 염소에게 주면 Na⁺와 Cl⁻가 되어 강한 전기적 인력으로 붙어요. 물에 잘 녹고 수용액에서 전기가 통해요.</div>
+          </div>
+        </div>
+
+        <!-- Card 2: 공유 결합 -->
+        <div class="concept-card">
+          <div class="card-svg-wrap">
+            <svg viewBox="0 0 300 180" xmlns="http://www.w3.org/2000/svg">
+              <!-- O atom -->
+              <circle cx="150" cy="85" r="38" fill="#BFDBFE" stroke="#2563EB" stroke-width="2.5"/>
+              <text x="150" y="92" text-anchor="middle" font-size="24" font-weight="bold" fill="#1D4ED8">O</text>
+              <!-- H left -->
+              <circle cx="62" cy="118" r="26" fill="#CCFBF1" stroke="#0D9488" stroke-width="2.5"/>
+              <text x="62" y="125" text-anchor="middle" font-size="20" font-weight="bold" fill="#0F766E">H</text>
+              <!-- H right -->
+              <circle cx="238" cy="118" r="26" fill="#CCFBF1" stroke="#0D9488" stroke-width="2.5"/>
+              <text x="238" y="125" text-anchor="middle" font-size="20" font-weight="bold" fill="#0F766E">H</text>
+              <!-- Bonds -->
+              <line x1="87" y1="107" x2="117" y2="99" stroke="#2563EB" stroke-width="3"/>
+              <line x1="183" y1="99" x2="213" y2="107" stroke="#2563EB" stroke-width="3"/>
+              <!-- Shared electron dots -->
+              <circle cx="102" cy="103" r="4" fill="#6366F1"/>
+              <circle cx="130" cy="95" r="4" fill="#6366F1"/>
+              <circle cx="170" cy="95" r="4" fill="#6366F1"/>
+              <circle cx="198" cy="103" r="4" fill="#6366F1"/>
+              <!-- Angle label -->
+              <text x="150" y="158" text-anchor="middle" font-size="13" fill="#374151">∠H-O-H = 104.5°</text>
+              <!-- Label -->
+              <text x="150" y="35" text-anchor="middle" font-size="14" font-weight="bold" fill="#374151">H₂O (물)</text>
+            </svg>
+          </div>
+          <div class="card-body">
+            <div class="card-title">공유 결합</div>
+            <div class="card-iupac-en">Covalent Bond</div>
+            <div class="card-iupac-ko">IUPAC: "두 원자가 한 쌍 이상의 전자를 공유하여 형성된 결합"</div>
+            <div class="card-desc">비금속 원자들이 전자쌍을 서로 나누어 가지는 결합이에요. 물(H₂O), 산소(O₂), 이산화탄소(CO₂)가 대표적이에요. 전자 공유 수에 따라 단일·이중·삼중 결합으로 나뉘어요.</div>
+          </div>
+        </div>
+
+        <!-- Card 3: 금속 결합 -->
+        <div class="concept-card">
+          <div class="card-svg-wrap">
+            <svg viewBox="0 0 300 180" xmlns="http://www.w3.org/2000/svg">
+              <!-- Metal lattice -->
+              <defs>
+                <radialGradient id="mg" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="#FDE68A"/>
+                  <stop offset="100%" stop-color="#D97706"/>
+                </radialGradient>
+              </defs>
+              <!-- Ions grid -->
+              <g fill="url(#mg)" stroke="#92400E" stroke-width="1.5">
+                <circle cx="60" cy="55" r="20"/>
+                <circle cx="150" cy="55" r="20"/>
+                <circle cx="240" cy="55" r="20"/>
+                <circle cx="105" cy="125" r="20"/>
+                <circle cx="195" cy="125" r="20"/>
+                <circle cx="60" cy="165" r="15" opacity="0.4"/>
+                <circle cx="240" cy="165" r="15" opacity="0.4"/>
+              </g>
+              <!-- Metal labels -->
+              <text x="60" y="61" text-anchor="middle" font-size="12" font-weight="bold" fill="white">M⁺</text>
+              <text x="150" y="61" text-anchor="middle" font-size="12" font-weight="bold" fill="white">M⁺</text>
+              <text x="240" y="61" text-anchor="middle" font-size="12" font-weight="bold" fill="white">M⁺</text>
+              <text x="105" y="131" text-anchor="middle" font-size="12" font-weight="bold" fill="white">M⁺</text>
+              <text x="195" y="131" text-anchor="middle" font-size="12" font-weight="bold" fill="white">M⁺</text>
+              <!-- Free electrons -->
+              <circle cx="100" cy="85" r="5" fill="#3B82F6" opacity="0.9"/>
+              <circle cx="175" cy="40" r="5" fill="#3B82F6" opacity="0.9"/>
+              <circle cx="220" cy="95" r="5" fill="#3B82F6" opacity="0.9"/>
+              <circle cx="50" cy="108" r="5" fill="#3B82F6" opacity="0.9"/>
+              <circle cx="155" cy="100" r="5" fill="#3B82F6" opacity="0.9"/>
+              <circle cx="270" cy="55" r="5" fill="#3B82F6" opacity="0.9"/>
+              <!-- Electron labels -->
+              <text x="150" y="170" text-anchor="middle" font-size="12" fill="#1D4ED8">● 자유 전자 바다</text>
+            </svg>
+          </div>
+          <div class="card-body">
+            <div class="card-title">금속 결합</div>
+            <div class="card-iupac-en">Metallic Bond</div>
+            <div class="card-iupac-ko">IUPAC: "금속 양이온 격자와 비편재화된 전자들 사이의 정전기적 인력에 의한 결합"</div>
+            <div class="card-desc">금속 원자가 전자를 공동으로 내놓아 '자유 전자의 바다'를 만들어요. 이 자유 전자 덕분에 금속은 전기·열을 잘 전도하고, 힘을 줘도 부서지지 않고 늘어나는 연성·전성을 가져요.</div>
+          </div>
+        </div>
+
+      </div><!-- /cards-grid -->
+
+      <div class="category-label">🧪 산염기 & 산화환원 (Acid-Base & Redox)</div>
+      <div class="cards-grid">
+
+        <!-- Card 4: 산-염기 -->
+        <div class="concept-card">
+          <div class="card-svg-wrap">
+            <svg viewBox="0 0 300 180" xmlns="http://www.w3.org/2000/svg">
+              <!-- pH scale bar -->
+              <defs>
+                <linearGradient id="phgrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#EF4444"/>
+                  <stop offset="50%" stop-color="#22C55E"/>
+                  <stop offset="100%" stop-color="#3B82F6"/>
+                </linearGradient>
+              </defs>
+              <rect x="20" y="60" width="260" height="28" rx="14" fill="url(#phgrad)"/>
+              <!-- pH ticks -->
+              <g font-size="10" text-anchor="middle" fill="#374151">
+                <text x="20" y="105">0</text>
+                <text x="45" y="105">2</text>
+                <text x="69" y="105">4</text>
+                <text x="92" y="105">6</text>
+                <text x="115" y="105">7</text>
+                <text x="138" y="105">8</text>
+                <text x="162" y="105">10</text>
+                <text x="210" y="105">12</text>
+                <text x="280" y="105">14</text>
+              </g>
+              <!-- Labels -->
+              <text x="50" y="48" text-anchor="middle" font-size="13" font-weight="bold" fill="#DC2626">산성</text>
+              <text x="150" y="48" text-anchor="middle" font-size="13" font-weight="bold" fill="#16A34A">중성</text>
+              <text x="250" y="48" text-anchor="middle" font-size="13" font-weight="bold" fill="#2563EB">염기성</text>
+              <!-- H+ arrow -->
+              <text x="60" y="130" text-anchor="middle" font-size="12" fill="#DC2626">H⁺ 많음</text>
+              <text x="240" y="130" text-anchor="middle" font-size="12" fill="#2563EB">OH⁻ 많음</text>
+              <!-- Proton transfer -->
+              <text x="150" y="162" text-anchor="middle" font-size="13" font-weight="bold" fill="#374151">HA + B → A⁻ + BH⁺</text>
+            </svg>
+          </div>
+          <div class="card-body">
+            <div class="card-title">산-염기 반응</div>
+            <div class="card-iupac-en">Acid-Base Reaction (Brønsted-Lowry)</div>
+            <div class="card-iupac-ko">IUPAC: "양성자(H⁺)를 주는 물질이 산(acid), 받는 물질이 염기(base)"</div>
+            <div class="card-desc">Brønsted-Lowry 정의로 산은 H⁺를 주고, 염기는 H⁺를 받아요. pH가 7 미만이면 산성, 7이면 중성, 7 초과면 염기성이에요. HCl, H₂SO₄은 강산, NaOH, KOH는 강염기예요.</div>
+          </div>
+        </div>
+
+        <!-- Card 5: 산화환원 -->
+        <div class="concept-card">
+          <div class="card-svg-wrap">
+            <svg viewBox="0 0 300 180" xmlns="http://www.w3.org/2000/svg">
+              <!-- Oxidation box -->
+              <rect x="15" y="30" width="120" height="120" rx="16" fill="#FEF2F2" stroke="#DC2626" stroke-width="2"/>
+              <text x="75" y="60" text-anchor="middle" font-size="14" font-weight="bold" fill="#DC2626">산화 (Oxidation)</text>
+              <text x="75" y="85" text-anchor="middle" font-size="13" fill="#374151">Zn → Zn²⁺</text>
+              <text x="75" y="108" text-anchor="middle" font-size="13" fill="#DC2626">전자 잃음</text>
+              <text x="75" y="130" text-anchor="middle" font-size="20">⬆ e⁻</text>
+              <!-- Reduction box -->
+              <rect x="165" y="30" width="120" height="120" rx="16" fill="#EFF6FF" stroke="#2563EB" stroke-width="2"/>
+              <text x="225" y="60" text-anchor="middle" font-size="14" font-weight="bold" fill="#2563EB">환원 (Reduction)</text>
+              <text x="225" y="85" text-anchor="middle" font-size="13" fill="#374151">Cu²⁺ → Cu</text>
+              <text x="225" y="108" text-anchor="middle" font-size="13" fill="#2563EB">전자 얻음</text>
+              <text x="225" y="130" text-anchor="middle" font-size="20">⬇ e⁻</text>
+              <!-- Electron transfer arrow -->
+              <path d="M 138 78 Q 150 55 162 78" stroke="#6366F1" stroke-width="2.5" fill="none" marker-end="url(#arred)"/>
+              <text x="150" y="52" text-anchor="middle" font-size="11" fill="#6366F1">e⁻</text>
+              <defs>
+                <marker id="arred" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L0,6 L6,3 z" fill="#6366F1"/>
+                </marker>
+              </defs>
+              <text x="150" y="168" text-anchor="middle" font-size="12" fill="#374151">항상 함께 일어남 (반쪽 반응)</text>
+            </svg>
+          </div>
+          <div class="card-body">
+            <div class="card-title">산화-환원 반응</div>
+            <div class="card-iupac-en">Oxidation-Reduction (Redox) Reaction</div>
+            <div class="card-iupac-ko">IUPAC: "한 물질의 산화수가 증가(산화)하고 다른 물질의 산화수가 감소(환원)하는 반응"</div>
+            <div class="card-desc">전자를 잃으면 산화, 얻으면 환원이에요. OIL RIG 규칙으로 외워요! (Oxidation Is Loss, Reduction Is Gain) 산화와 환원은 항상 동시에 일어나요. 철이 녹스는 것, 연소, 광합성이 모두 산화환원 반응이에요.</div>
+          </div>
+        </div>
+
+        <!-- Card 6: 전기화학 -->
+        <div class="concept-card">
+          <div class="card-svg-wrap">
+            <svg viewBox="0 0 300 180" xmlns="http://www.w3.org/2000/svg">
+              <!-- Galvanic cell -->
+              <!-- Anode (Zn) -->
+              <rect x="25" y="50" width="80" height="100" rx="6" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.5"/>
+              <rect x="55" y="30" width="20" height="50" rx="3" fill="#6B7280"/>
+              <text x="65" y="165" text-anchor="middle" font-size="11" fill="#374151">Zn (음극)</text>
+              <text x="65" y="24" text-anchor="middle" font-size="10" fill="#DC2626">산화</text>
+              <!-- Cathode (Cu) -->
+              <rect x="195" y="50" width="80" height="100" rx="6" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.5"/>
+              <rect x="225" y="30" width="20" height="50" rx="3" fill="#D97706"/>
+              <text x="235" y="165" text-anchor="middle" font-size="11" fill="#374151">Cu (양극)</text>
+              <text x="235" y="24" text-anchor="middle" font-size="10" fill="#2563EB">환원</text>
+              <!-- Salt bridge -->
+              <rect x="120" y="60" width="60" height="16" rx="8" fill="#E0E7FF" stroke="#6366F1" stroke-width="1.5"/>
+              <text x="150" y="73" text-anchor="middle" font-size="9" fill="#4338CA">염다리</text>
+              <!-- Wire + e- flow -->
+              <path d="M 65 30 L 65 10 L 235 10 L 235 30" stroke="#374151" stroke-width="2" fill="none"/>
+              <!-- Bulb -->
+              <circle cx="150" cy="10" r="10" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+              <text x="150" y="14" text-anchor="middle" font-size="10">💡</text>
+              <!-- e- arrows -->
+              <text x="110" y="7" text-anchor="middle" font-size="11" fill="#DC2626">e⁻ →</text>
+              <!-- Electrolyte -->
+              <text x="65" y="110" text-anchor="middle" font-size="10" fill="#0D9488">ZnSO₄</text>
+              <text x="235" y="110" text-anchor="middle" font-size="10" fill="#0D9488">CuSO₄</text>
+            </svg>
+          </div>
+          <div class="card-body">
+            <div class="card-title">전기화학 (갈바니 전지)</div>
+            <div class="card-iupac-en">Electrochemistry / Galvanic Cell</div>
+            <div class="card-iupac-ko">IUPAC: "자발적 산화환원 반응의 화학 에너지를 전기 에너지로 변환하는 장치"</div>
+            <div class="card-desc">갈바니 전지는 자발적 산화환원 반응으로 전기를 만들어요. 아연판(음극)에서 산화가 일어나 전자가 외부 회로를 통해 구리판(양극)으로 이동해요. 우리가 쓰는 배터리의 원리예요!</div>
+          </div>
+        </div>
+
+      </div><!-- /cards-grid -->
+    </div><!-- /section-concepts -->
+
+
+    <!-- ─── QUIZ ─── -->
+    <div id="section-quiz" class="section">
+      <h2 class="section-title">✏️ 개념 퀴즈</h2>
+      <p class="section-sub">10문제로 일반화학 핵심 개념을 점검해보세요!</p>
+
+      <div class="quiz-header">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span id="q-counter" style="font-weight:700;color:var(--blue)">문제 1 / 10</span>
+          <span id="q-score-display" class="quiz-score">점수: 0점</span>
+        </div>
+        <div class="quiz-progress-bar"><div class="quiz-progress-fill" id="q-progress" style="width:10%"></div></div>
+      </div>
+
+      <div id="question-area" class="question-card">
+        <div class="q-num"><span class="q-badge" id="q-topic"></span></div>
+        <div class="q-text" id="q-text"></div>
+        <div class="choices" id="q-choices"></div>
+        <div class="feedback-box" id="q-feedback"></div>
+        <button class="btn-next" id="btn-next" onclick="nextQuestion()">다음 문제 →</button>
+      </div>
+
+      <div class="quiz-result" id="quiz-result">
+        <div class="result-emoji" id="result-emoji"></div>
+        <div class="result-score" id="result-score"></div>
+        <div class="result-msg" id="result-msg"></div>
+        <button class="btn-retry" onclick="startQuiz()">다시 풀기 🔄</button>
+      </div>
+    </div>
+
+
+    <!-- ─── CHAT ─── -->
+    <div id="section-chat" class="section">
+      <h2 class="section-title" style="margin-bottom:4px">💬 AI 일반화학샘</h2>
+      <p class="section-sub">화학에 관해 무엇이든 물어보세요!</p>
+
+      <!-- API key inline banner (shown when no key) -->
+      <div id="api-banner" style="background:var(--blue-light);border:1.5px solid var(--blue-mid);border-radius:16px;padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <span style="font-size:22px">🔑</span>
+        <div style="flex:1;min-width:180px">
+          <div style="font-weight:700;color:var(--blue);margin-bottom:2px">Gemini API 키가 필요해요</div>
+          <div style="font-size:13px;color:var(--gray-600)">채팅을 사용하려면 API 키를 입력하세요. <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--blue)">무료 발급 →</a></div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="password" id="banner-key-input" placeholder="AIzaSy..." style="padding:9px 12px;border:2px solid var(--blue-mid);border-radius:10px;font-size:14px;outline:none;width:200px;" />
+          <button onclick="saveBannerKey()" style="padding:9px 16px;background:var(--blue);color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">저장</button>
+        </div>
+      </div>
+
+      <div class="chat-quick-btns">
+        <button class="quick-btn" onclick="sendQuick('이온 결합과 공유 결합의 차이점을 쉽게 설명해줘')">이온 vs 공유 결합</button>
+        <button class="quick-btn" onclick="sendQuick('산화환원 반응을 쉬운 예시로 알려줘')">산화환원 반응</button>
+        <button class="quick-btn" onclick="sendQuick('pH 계산 방법을 알려줘')">pH 계산법</button>
+        <button class="quick-btn" onclick="sendQuick('갈바니 전지 원리를 설명해줘')">갈바니 전지</button>
+      </div>
+
+      <div class="chat-wrap">
+        <div class="chat-messages" id="chat-messages">
+          <div class="msg ai">
+            <div class="msg-avatar">🔬</div>
+            <div>
+              <div class="msg-bubble">안녕하세요! 저는 일반화학샘이에요. 화학 결합, 산염기, 산화환원, 전기화학 등 궁금한 내용을 언제든지 물어보세요. 쉽고 재미있게 설명해 드릴게요! 😊</div>
+              <div class="msg-time">일반화학샘</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="typing-indicator" id="typing">
+          <div class="msg-avatar">🔬</div>
+          <div class="typing-bubble">
+            일반화학샘이 생각하는 중... 🔬
+            <div class="dots"><span></span><span></span><span></span></div>
+          </div>
+        </div>
+
+        <div class="error-msg" id="chat-error">
+          ⚠️ 인터넷 연결 또는 API 키를 확인해주세요. 잠시 후 다시 시도해보세요.
+        </div>
+
+        <div class="chat-input-area">
+          <textarea
+            id="chat-input"
+            class="chat-textarea"
+            placeholder="화학 질문을 입력하세요... (Shift+Enter로 줄바꿈)"
+            rows="1"
+            onkeydown="handleKey(event)"
+            oninput="autoResize(this)"
+          ></textarea>
+          <button class="btn-send" id="btn-send" onclick="sendMessage()">
+            <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  // ═══════════ STATE ═══════════
+  let apiKey = '';
+  let chatHistory = [];
+
+  function saveBannerKey() {
+    const val = document.getElementById('banner-key-input').value.trim();
+    if (!val) return;
+    apiKey = val;
+    document.getElementById('api-banner').style.display = 'none';
+  }
+
+  function showApiModal() {
+    const key = prompt('Gemini API 키를 입력하세요 (기존 키를 변경할 수 있어요):');
+    if (key && key.trim()) {
+      apiKey = key.trim();
+      document.getElementById('api-banner').style.display = 'none';
+    }
+  }
+
+  function updateBannerVisibility() {
+    const banner = document.getElementById('api-banner');
+    if (banner) banner.style.display = apiKey ? 'none' : 'flex';
+  }
+  let currentQ = 0;
+  let score = 0;
+  let answered = false;
+
+  // ═══════════ QUIZ DATA ═══════════
+  const questions = [
+    {
+      topic: '이온 결합',
+      text: '이온 결합에서 전자를 잃어 양이온이 되는 원소는 어느 것일까요?',
+      choices: ['금속 원소', '비금속 원소', '비활성 기체', '반도체 원소'],
+      answer: 0,
+      explain: '✅ 정답! 금속 원소(예: Na, Mg)는 전자를 잃어 양이온(Na⁺, Mg²⁺)이 됩니다. 비금속은 전자를 얻어 음이온이 돼요.'
+    },
+    {
+      topic: '공유 결합',
+      text: '물 분자(H₂O)에서 수소와 산소 사이의 결합 종류는?',
+      choices: ['이온 결합', '극성 공유 결합', '무극성 공유 결합', '금속 결합'],
+      answer: 1,
+      explain: '✅ 정답! O-H 결합은 전기음성도 차이로 전자가 산소 쪽에 치우치는 극성 공유 결합이에요. 완전히 이온화되지는 않아요.'
+    },
+    {
+      topic: '산-염기',
+      text: 'Brønsted-Lowry 정의에 따르면, 산(acid)은 어떤 물질인가요?',
+      choices: ['전자쌍을 받는 물질', '수산화 이온(OH⁻)을 내놓는 물질', '양성자(H⁺)를 주는 물질', '산화수가 증가하는 물질'],
+      answer: 2,
+      explain: '✅ 정답! Brønsted-Lowry 산은 양성자(H⁺) 공여체(proton donor)예요. HCl → H⁺ + Cl⁻ 처럼 H⁺를 내놓는 물질이 산입니다.'
+    },
+    {
+      topic: '산화환원',
+      text: '다음 중 "산화"가 일어날 때의 변화로 옳은 것은?',
+      choices: ['전자를 얻는다', '산화수가 감소한다', '전자를 잃는다', 'H⁺를 받는다'],
+      answer: 2,
+      explain: '✅ 정답! 산화(Oxidation) = 전자 잃음, 산화수 증가. OIL RIG: Oxidation Is Loss, Reduction Is Gain으로 외워요!'
+    },
+    {
+      topic: '산-염기',
+      text: '25°C에서 pH = 3인 용액의 특성으로 옳은 것은?',
+      choices: ['염기성이며 OH⁻ 농도가 높다', '중성이며 [H⁺] = 10⁻⁷ M이다', '산성이며 [H⁺] = 10⁻³ M이다', '강염기 용액이다'],
+      answer: 2,
+      explain: '✅ 정답! pH = -log[H⁺]이므로 pH 3 → [H⁺] = 10⁻³ M. pH < 7은 산성이에요. 레몬주스, 식초 등이 pH 2~4 정도예요.'
+    },
+    {
+      topic: '금속 결합',
+      text: '금속이 전기를 잘 전도하는 이유는?',
+      choices: ['이온 결합으로 결합되어 있기 때문', '자유 전자가 자유롭게 이동할 수 있기 때문', 'pH가 낮기 때문', '공유 결합이 강하기 때문'],
+      answer: 1,
+      explain: '✅ 정답! 금속 결합에서 자유 전자(delocalized electrons)가 격자 사이를 자유롭게 움직이기 때문에 전기와 열을 잘 전도해요.'
+    },
+    {
+      topic: '산화환원',
+      text: 'Zn + CuSO₄ → ZnSO₄ + Cu 반응에서 산화되는 물질은?',
+      choices: ['Cu²⁺', 'Zn', 'SO₄²⁻', 'Cu'],
+      answer: 1,
+      explain: '✅ 정답! Zn → Zn²⁺ + 2e⁻ : 아연이 전자를 잃으므로 산화됩니다. Cu²⁺ + 2e⁻ → Cu : 구리이온은 환원돼요.'
+    },
+    {
+      topic: '전기화학',
+      text: '갈바니(볼타) 전지에서 산화 반응이 일어나는 전극은?',
+      choices: ['양극 (cathode)', '음극 (anode)', '염다리 (salt bridge)', '전해질 (electrolyte)'],
+      answer: 1,
+      explain: '✅ 정답! 갈바니 전지에서 음극(anode)에서 산화가, 양극(cathode)에서 환원이 일어나요. 전자는 anode → cathode로 흘러요.'
+    },
+    {
+      topic: '이온 결합',
+      text: '이온 결합 화합물의 특성으로 옳은 것은?',
+      choices: ['분자 상태에서 전기 전도성이 높다', '끓는점과 녹는점이 낮다', '수용액 상태에서 전기를 전도한다', '물에 녹지 않는다'],
+      answer: 2,
+      explain: '✅ 정답! 이온 결합 화합물은 수용액이나 용융 상태에서 이온이 자유롭게 이동하므로 전기를 전도해요. 고체 상태에서는 이온이 고정되어 전도성이 없어요.'
+    },
+    {
+      topic: '공유 결합',
+      text: 'N₂(질소 분자)에서 두 질소 원자 사이의 결합은?',
+      choices: ['단일 결합 (1쌍 공유)', '이중 결합 (2쌍 공유)', '삼중 결합 (3쌍 공유)', '이온 결합'],
+      answer: 2,
+      explain: '✅ 정답! N₂는 :N≡N: 구조로 3쌍(6개)의 전자를 공유하는 삼중 결합(triple bond)이에요. 매우 안정하여 반응성이 낮아요.'
+    }
+  ];
+
+  // ═══════════ APP CONTROL ═══════════
+
+  function showSection(name, btn) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('section-' + name).classList.add('active');
+    btn.classList.add('active');
+    if (name === 'chat') updateBannerVisibility();
+  }
+
+  // ═══════════ QUIZ ═══════════
+  function startQuiz() {
+    currentQ = 0;
+    score = 0;
+    answered = false;
+    document.getElementById('quiz-result').classList.remove('show');
+    document.getElementById('question-area').style.display = 'block';
+    renderQuestion();
+  }
+
+  function renderQuestion() {
+    const q = questions[currentQ];
+    answered = false;
+    document.getElementById('q-counter').textContent = `문제 ${currentQ + 1} / ${questions.length}`;
+    document.getElementById('q-score-display').textContent = `점수: ${score}점`;
+    document.getElementById('q-progress').style.width = `${((currentQ) / questions.length) * 100}%`;
+    document.getElementById('q-topic').textContent = q.topic;
+    document.getElementById('q-text').textContent = q.text;
+    document.getElementById('q-feedback').className = 'feedback-box';
+    document.getElementById('q-feedback').textContent = '';
+    document.getElementById('btn-next').className = 'btn-next';
+
+    const choicesEl = document.getElementById('q-choices');
+    choicesEl.innerHTML = '';
+    q.choices.forEach((c, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.textContent = `${['①','②','③','④'][i]} ${c}`;
+      btn.onclick = () => selectAnswer(i, btn);
+      choicesEl.appendChild(btn);
+    });
+  }
+
+  function selectAnswer(idx, btn) {
+    if (answered) return;
+    answered = true;
+    const q = questions[currentQ];
+    const allBtns = document.querySelectorAll('.choice-btn');
+    allBtns.forEach(b => b.disabled = true);
+
+    const fb = document.getElementById('q-feedback');
+    if (idx === q.answer) {
+      btn.classList.add('correct');
+      score++;
+      fb.className = 'feedback-box ok show';
+      fb.textContent = q.explain;
+    } else {
+      btn.classList.add('wrong');
+      allBtns[q.answer].classList.add('correct');
+      fb.className = 'feedback-box no show';
+      fb.textContent = `❌ 틀렸어요. 정답은 "${q.choices[q.answer]}"예요. ${q.explain.replace('✅ 정답! ', '')}`;
+    }
+
+    document.getElementById('q-score-display').textContent = `점수: ${score}점`;
+
+    const nextBtn = document.getElementById('btn-next');
+    nextBtn.className = 'btn-next show';
+    nextBtn.textContent = currentQ < questions.length - 1 ? '다음 문제 →' : '결과 보기 🎉';
+  }
+
+  function nextQuestion() {
+    currentQ++;
+    if (currentQ >= questions.length) {
+      showResult();
+    } else {
+      renderQuestion();
+    }
+  }
+
+  function showResult() {
+    document.getElementById('question-area').style.display = 'none';
+    const result = document.getElementById('quiz-result');
+    result.classList.add('show');
+    document.getElementById('q-progress').style.width = '100%';
+
+    const pct = Math.round((score / questions.length) * 100);
+    document.getElementById('result-score').textContent = `${score} / ${questions.length}점`;
+
+    let emoji, msg;
+    if (pct === 100) { emoji = '🏆'; msg = '완벽해요! 일반화학 마스터!'; }
+    else if (pct >= 80) { emoji = '🎉'; msg = '훌륭해요! 거의 다 맞혔어요!'; }
+    else if (pct >= 60) { emoji = '👍'; msg = '잘 했어요! 조금만 더 연습해봐요.'; }
+    else if (pct >= 40) { emoji = '📚'; msg = '개념 카드를 다시 한번 읽어보세요!'; }
+    else { emoji = '🔬'; msg = '괜찮아요! 개념 카드부터 차근차근 시작해요.'; }
+
+    document.getElementById('result-emoji').textContent = emoji;
+    document.getElementById('result-msg').textContent = msg;
+  }
+
+  // ═══════════ CHAT ═══════════
+  const SYSTEM_PROMPT = `당신은 "일반화학샘"이라는 친절하고 열정적인 한국어 일반화학 튜터입니다.
+다음 규칙을 따르세요:
+1. 항상 한국어로 답변하세요.
+2. 화학 개념을 쉽고 재미있는 비유와 예시로 설명하세요.
+3. 화학 기호와 수식을 정확하게 사용하세요 (예: H₂O, CO₂, Fe³⁺).
+4. 답변 끝에 관련된 짧은 팁이나 암기법을 추가하면 좋아요.
+5. 학생이 이해했는지 확인하는 질문을 가끔 하세요.
+6. 전문 용어는 IUPAC 정의와 함께 설명하세요.
+7. 답변은 명확하고 구조적으로 (소제목, 줄바꿈 활용) 작성하세요.`;
+
+  function getTime() {
+    return new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function addMessage(role, text) {
+    const container = document.getElementById('chat-messages');
+    const div = document.createElement('div');
+    div.className = `msg ${role}`;
+
+    const avatar = document.createElement('div');
+    avatar.className = 'msg-avatar';
+    avatar.textContent = role === 'ai' ? '🔬' : '👤';
+
+    const inner = document.createElement('div');
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    bubble.style.whiteSpace = 'pre-wrap';
+    bubble.textContent = text;
+
+    const time = document.createElement('div');
+    time.className = 'msg-time';
+    time.textContent = role === 'ai' ? `일반화학샘 · ${getTime()}` : getTime();
+
+    inner.appendChild(bubble);
+    inner.appendChild(time);
+
+    if (role === 'ai') {
+      div.appendChild(avatar);
+      div.appendChild(inner);
+    } else {
+      div.appendChild(inner);
+      div.appendChild(avatar);
+    }
+
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+    if (!apiKey) {
+      document.getElementById('api-banner').style.display = 'flex';
+      document.getElementById('banner-key-input').focus();
+      return;
+    }
+
+    input.value = '';
+    input.style.height = 'auto';
+    document.getElementById('btn-send').disabled = true;
+    document.getElementById('chat-error').classList.remove('show');
+
+    addMessage('user', text);
+    chatHistory.push({ role: 'user', parts: [{ text }] });
+
+    document.getElementById('typing').classList.add('show');
+    document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+
+    try {
+      const body = {
+        system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        contents: chatHistory,
+        generationConfig: { temperature: 0.7, maxOutputTokens: 1500 }
+      };
+
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+      );
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error?.message || `HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (!reply) throw new Error('응답이 비어있습니다.');
+
+      chatHistory.push({ role: 'model', parts: [{ text: reply }] });
+
+      document.getElementById('typing').classList.remove('show');
+      addMessage('ai', reply);
+
+    } catch (e) {
+      document.getElementById('typing').classList.remove('show');
+      document.getElementById('chat-error').classList.add('show');
+      document.getElementById('chat-error').textContent =
+        `⚠️ 오류: ${e.message}. 인터넷 연결 또는 API 키를 확인해주세요.`;
+      chatHistory.pop();
+    } finally {
+      document.getElementById('btn-send').disabled = false;
+      input.focus();
+    }
+  }
+
+  function sendQuick(text) {
+    const input = document.getElementById('chat-input');
+    input.value = text;
+    sendMessage();
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  }
+
+  // ═══════════ INIT ═══════════
+  startQuiz();
+  // banner hidden by default (chat tab not shown yet)
+  document.getElementById('api-banner').style.display = 'none';
+</script>
+</body>
+</html>
